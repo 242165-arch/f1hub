@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Route, Routes } from 'react-router-dom';
 
 const initialIntro = {
   videoUrl: 'https://www.youtube.com/watch?v=8AYy-BcjRXg',
@@ -32,6 +33,15 @@ const drivers = [
   { pos: '02', name: 'Max Verstappen', team: 'Red Bull Racing', points: '381', color: '#3671c6' },
   { pos: '03', name: 'Oscar Piastri', team: 'McLaren', points: '366', color: '#ff8000' },
   { pos: '04', name: 'Charles Leclerc', team: 'Ferrari', points: '290', color: '#e8002d' },
+];
+
+const calendarRaces = [
+  { round: '01', race: 'Australian Grand Prix', city: 'Melbourne', circuit: 'Albert Park Grand Prix Circuit' },
+  { round: '02', race: 'Japanese Grand Prix', city: 'Suzuka', circuit: 'Suzuka International Racing Course' },
+  { round: '03', race: 'Monaco Grand Prix', city: 'Monte Carlo', circuit: 'Circuit de Monaco' },
+  { round: '04', race: 'British Grand Prix', city: 'Silverstone', circuit: 'Silverstone Circuit' },
+  { round: '05', race: 'Italian Grand Prix', city: 'Monza', circuit: 'Autodromo Nazionale Monza' },
+  { round: '06', race: 'United States Grand Prix', city: 'Austin, Texas', circuit: 'Circuit of The Americas' },
 ];
 
 const stories = [
@@ -130,13 +140,14 @@ function Intro({ content, onSkip }) {
 function Header() {
   return (
     <header className="site-header">
-      <a className="wordmark" href="#top" aria-label="Gridline home"><img className="wordmark__mark" src="/logo.svg" alt="" aria-hidden="true" />GRIDLINE<span className="wordmark__period">.</span></a>
+      <Link className="wordmark" to="/" aria-label="Gridline home"><img className="wordmark__mark" src="/logo.svg" alt="" aria-hidden="true" />GRIDLINE<span className="wordmark__period">.</span></Link>
       <nav className="main-nav" aria-label="Main navigation">
-        <a href="#weekend">Race weekend</a>
-        <a href="#standings">Standings</a>
-        <a href="#stories">The paddock</a>
+        <NavLink to="/" end>Home</NavLink>
+        <NavLink to="/calander">Calendar</NavLink>
+        <NavLink to="/standings">Standings</NavLink>
+        <a href="/#stories">The paddock</a>
       </nav>
-      <a className="header-cta" href="#weekend">Explore the grid <span aria-hidden="true">↗</span></a>
+      <Link className="header-cta" to="/calander">Explore the grid <span aria-hidden="true">↗</span></Link>
     </header>
   );
 }
@@ -163,7 +174,7 @@ function RaceHero({ videoUrl }) {
         <p className="eyebrow"><span className="eyebrow__dot" />THE HOME OF F1 FANS</p>
         <h1>EVERY LAP.<br /><span>EVERY STORY.</span></h1>
         <p className="race-hero__text">The noise, the nerve, the moments that make you fall in love with racing. It all lives here.</p>
-        <a className="button button--light" href="#weekend">Find your race weekend <span aria-hidden="true">↗</span></a>
+        <Link className="button button--light" to="/calander">Find your race weekend <span aria-hidden="true">↗</span></Link>
       </div>
       <div className="race-hero__caption"><span>01</span><span>BUILT FOR THE LOVE OF RACING</span></div>
       <div className="race-hero__vertical">FORMULA ONE · FAN CULTURE · COMMUNITY</div>
@@ -176,19 +187,19 @@ function RaceWeekend() {
     <section className="weekend section-wrap" id="weekend">
       <div className="section-heading">
         <div><p className="section-kicker">MARK YOUR CALENDAR</p><h2>Next up <span>on track</span></h2></div>
-        <a className="text-link" href="https://www.formula1.com/en/racing/2026" target="_blank" rel="noreferrer">Full 2026 calendar <span aria-hidden="true">↗</span></a>
+        <Link className="text-link" to="/calander">Full 2026 calendar <span aria-hidden="true">↗</span></Link>
       </div>
       <div className="weekend__row">
         <div className="weekend__round"><span>ROUND</span><strong>19</strong></div>
         <div className="weekend__name"><p>UNITED STATES GRAND PRIX</p><h3>AUSTIN <span>/</span> TEXAS</h3><span className="weekend__venue">Circuit of The Americas · 5.513 km · 56 laps</span></div>
         <div className="weekend__date"><span>RACE WEEKEND</span><strong>23 — 25 <small>OCT</small></strong><span className="weekend__year">2026 SEASON</span></div>
-        <a className="weekend__arrow" href="https://www.formula1.com/en/racing/2026" target="_blank" rel="noreferrer" aria-label="View United States Grand Prix details">↗</a>
+        <Link className="weekend__arrow" to="/calander" aria-label="View race calendar">↗</Link>
       </div>
     </section>
   );
 }
 
-function Standings() {
+function Standings({ fullPage = false }) {
   const [activeTab, setActiveTab] = useState('Drivers');
   const shownRows = activeTab === 'Drivers' ? drivers : [
     { pos: '01', name: 'McLaren', team: 'Constructor', points: '756', color: '#ff8000' },
@@ -198,9 +209,9 @@ function Standings() {
   ];
 
   return (
-    <section className="standings section-wrap" id="standings">
+    <section className={`standings section-wrap${fullPage ? ' standings--page' : ''}`} id="standings">
       <div className="section-heading">
-        <div><p className="section-kicker">THE CHAMPIONSHIP</p><h2>Made of <span>points.</span></h2></div>
+        <div><p className="section-kicker">{fullPage ? 'PLACEHOLDER · 2026 SEASON' : 'THE CHAMPIONSHIP'}</p><h2>{fullPage ? <>Championship <span>standings.</span></> : <>Made of <span>points.</span></>}</h2></div>
         <div className="tab-switch" role="tablist" aria-label="Championship standings">
           {['Drivers', 'Constructors'].map((tab) => (
             <button key={tab} type="button" role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? 'is-active' : ''} onClick={() => setActiveTab(tab)}>{tab}</button>
@@ -217,7 +228,31 @@ function Standings() {
           </div>
         ))}
       </div>
-      <p className="standings__note">Sample standings preview · Connect official live timing and points data here</p>
+      <p className="standings__note">Placeholder standings · Points and positions are sample data, not official results.</p>
+    </section>
+  );
+}
+
+function CalendarPage() {
+  return (
+    <section className="calendar-page section-wrap">
+      <div className="section-heading">
+        <div><p className="section-kicker">PLACEHOLDER · 2026 SEASON</p><h1>Race <span>calendar.</span></h1></div>
+        <span className="calendar-page__status">DATES TO BE CONFIRMED</span>
+      </div>
+      <p className="calendar-page__note">A starter schedule layout. Round dates and event details are placeholders.</p>
+      <div className="calendar-table" role="table" aria-label="Placeholder race calendar">
+        <div className="calendar-table__head" role="row"><span>ROUND</span><span>GRAND PRIX</span><span>LOCATION</span><span>CIRCUIT</span><span>DATE</span></div>
+        {calendarRaces.map((event) => (
+          <div className="calendar-table__row" role="row" key={event.round}>
+            <span className="calendar-table__round">{event.round}</span>
+            <strong>{event.race}</strong>
+            <span>{event.city}</span>
+            <span className="calendar-table__circuit">{event.circuit}</span>
+            <span className="calendar-table__date">TBC</span>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -243,6 +278,17 @@ function Stories() {
         ))}
       </div>
     </section>
+  );
+}
+
+function HomePage({ intro, showIntro }) {
+  return (
+    <>
+      {!showIntro && <RaceHero videoUrl={intro.videoUrl} />}
+      <RaceWeekend />
+      <Standings />
+      <Stories />
+    </>
   );
 }
 
@@ -272,12 +318,14 @@ function App() {
     <>
       <Header />
       <main>
-        {!showIntro && <RaceHero videoUrl={intro.videoUrl} />}
-        <RaceWeekend />
-        <Standings />
-        <Stories />
+        <Routes>
+          <Route path="/" element={<HomePage intro={intro} showIntro={showIntro} />} />
+          <Route path="/standings" element={<Standings fullPage />} />
+          <Route path="/calander" element={<CalendarPage />} />
+          <Route path="*" element={<section className="section-wrap route-not-found"><p className="section-kicker">NOT ON THE GRID</p><h1>Page <span>not found.</span></h1><Link className="text-link" to="/">Back to home <span aria-hidden="true">↗</span></Link></section>} />
+        </Routes>
       </main>
-      <footer className="site-footer"><a className="wordmark" href="#top" aria-label="Gridline home"><img className="wordmark__mark" src="/logo.svg" alt="" aria-hidden="true" />GRIDLINE<span className="wordmark__period">.</span></a><span>MADE FOR THE LOVE OF RACING.</span><span>NOT AFFILIATED WITH FORMULA 1.</span></footer>
+      <footer className="site-footer"><Link className="wordmark" to="/" aria-label="Gridline home"><img className="wordmark__mark" src="/logo.svg" alt="" aria-hidden="true" />GRIDLINE<span className="wordmark__period">.</span></Link><span>MADE FOR THE LOVE OF RACING.</span><span>NOT AFFILIATED WITH FORMULA 1.</span></footer>
       {showIntro && <Intro content={intro} onSkip={closeIntro} />}
     </>
   );
