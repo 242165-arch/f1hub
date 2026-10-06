@@ -141,10 +141,23 @@ function Header() {
   );
 }
 
-function RaceHero() {
+function RaceHero({ videoUrl }) {
+  const videoId = getYoutubeId(videoUrl);
+
   return (
     <section className="race-hero" id="top">
       <div className="race-hero__image" />
+      {videoId && (
+        <iframe
+          className="race-hero__video"
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&modestbranding=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+          title="Muted looping Formula 1 background video"
+          allow="autoplay; encrypted-media"
+          referrerPolicy="strict-origin-when-cross-origin"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
       <div className="race-hero__veil" />
       <div className="race-hero__copy">
         <p className="eyebrow"><span className="eyebrow__dot" />THE HOME OF F1 FANS</p>
@@ -259,7 +272,7 @@ function App() {
     <>
       <Header />
       <main>
-        <RaceHero />
+        {!showIntro && <RaceHero videoUrl={intro.videoUrl} />}
         <RaceWeekend />
         <Standings />
         <Stories />

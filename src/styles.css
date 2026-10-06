@@ -44,6 +44,7 @@ button { cursor: pointer; }
 .race-hero { height: min(700px, calc(100svh - 76px)); min-height: 560px; position: relative; overflow: hidden; background: #26292b; color: white; }
 .race-hero__image, .race-hero__veil { position: absolute; inset: 0; }
 .race-hero__image { background: url('https://images.unsplash.com/photo-1532906619279-a4b7267faa66?auto=format&fit=crop&w=2200&q=90') center 54% / cover no-repeat; transform: scale(1.02); animation: hero-arrive 1.2s ease-out both; }
+.race-hero__video { position: absolute; z-index: 0; top: 50%; left: 50%; width: max(100vw, 177.78vh); height: max(100vh, 56.25vw); transform: translate(-50%, -50%); border: 0; pointer-events: none; }
 .race-hero__veil { background: linear-gradient(90deg, rgba(12,14,15,.9) 0%, rgba(12,14,15,.71) 36%, rgba(12,14,15,.1) 78%), linear-gradient(0deg, rgba(8,9,10,.52), transparent 30%); }
 .race-hero__copy { position: absolute; z-index: 1; top: 50%; left: clamp(28px, 11vw, 170px); transform: translateY(-47%); max-width: 610px; animation: copy-arrive .8s .15s both; }
 .eyebrow, .section-kicker { margin: 0; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
