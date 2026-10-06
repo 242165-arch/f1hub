@@ -32,7 +32,7 @@ button { cursor: pointer; }
   z-index: 2;
 }
 .wordmark { display: inline-flex; align-items: center; gap: 8px; font: 800 21px var(--display); }
-.wordmark__mark { display: grid; place-items: center; width: 28px; height: 28px; background: var(--red); color: white; font: 800 19px var(--display); transform: skew(-8deg); }
+.wordmark__mark { display: block; flex: 0 0 auto; width: 29px; height: 28px; object-fit: contain; }
 .wordmark__period { color: var(--red); margin-left: -8px; }
 .main-nav { display: flex; align-items: center; gap: 38px; }
 .main-nav a, .header-cta { font-size: 12px; font-weight: 600; }

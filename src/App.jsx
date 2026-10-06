@@ -130,7 +130,7 @@ function Intro({ content, onSkip }) {
 function Header() {
   return (
     <header className="site-header">
-      <a className="wordmark" href="#top" aria-label="Gridline home"><span className="wordmark__mark">G</span>GRIDLINE<span className="wordmark__period">.</span></a>
+      <a className="wordmark" href="#top" aria-label="Gridline home"><img className="wordmark__mark" src="/logo.svg" alt="" aria-hidden="true" />GRIDLINE<span className="wordmark__period">.</span></a>
       <nav className="main-nav" aria-label="Main navigation">
         <a href="#weekend">Race weekend</a>
         <a href="#standings">Standings</a>
@@ -264,7 +264,7 @@ function App() {
         <Standings />
         <Stories />
       </main>
-      <footer className="site-footer"><a className="wordmark" href="#top"><span className="wordmark__mark">G</span>GRIDLINE<span className="wordmark__period">.</span></a><span>MADE FOR THE LOVE OF RACING.</span><span>NOT AFFILIATED WITH FORMULA 1.</span></footer>
+      <footer className="site-footer"><a className="wordmark" href="#top" aria-label="Gridline home"><img className="wordmark__mark" src="/logo.svg" alt="" aria-hidden="true" />GRIDLINE<span className="wordmark__period">.</span></a><span>MADE FOR THE LOVE OF RACING.</span><span>NOT AFFILIATED WITH FORMULA 1.</span></footer>
       {showIntro && <Intro content={intro} onSkip={closeIntro} />}
     </>
   );
