@@ -109,6 +109,7 @@ button { cursor: pointer; }
 .calendar-page { min-height: 68vh; padding-top: 78px; }
 .calendar-page__status { padding: 9px 11px; border: 1px solid var(--line); color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: 1px; }
 .calendar-page__note { margin: -10px 0 26px; color: var(--muted); font-size: 12px; }
+.data-message { margin: 18px 0; color: var(--muted); font-size: 12px; }
 .calendar-table { border-top: 1px solid var(--ink); }
 .calendar-table__head, .calendar-table__row { display: grid; grid-template-columns: 72px 1.3fr .9fr 1.4fr 90px; align-items: center; column-gap: 16px; }
 .calendar-table__head { min-height: 38px; color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: 1px; }

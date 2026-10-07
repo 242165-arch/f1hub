@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { fetchSeasonData } from './f1Api.js';
 
 const initialIntro = {
   videoUrl: 'https://www.youtube.com/watch?v=8AYy-BcjRXg',
@@ -27,22 +28,6 @@ function loadYoutubeApi() {
   }
   return youtubeApiPromise;
 }
-
-const drivers = [
-  { pos: '01', name: 'Lando Norris', team: 'McLaren', points: '390', color: '#ff8000' },
-  { pos: '02', name: 'Max Verstappen', team: 'Red Bull Racing', points: '381', color: '#3671c6' },
-  { pos: '03', name: 'Oscar Piastri', team: 'McLaren', points: '366', color: '#ff8000' },
-  { pos: '04', name: 'Charles Leclerc', team: 'Ferrari', points: '290', color: '#e8002d' },
-];
-
-const calendarRaces = [
-  { round: '01', race: 'Australian Grand Prix', city: 'Melbourne', circuit: 'Albert Park Grand Prix Circuit' },
-  { round: '02', race: 'Japanese Grand Prix', city: 'Suzuka', circuit: 'Suzuka International Racing Course' },
-  { round: '03', race: 'Monaco Grand Prix', city: 'Monte Carlo', circuit: 'Circuit de Monaco' },
-  { round: '04', race: 'British Grand Prix', city: 'Silverstone', circuit: 'Silverstone Circuit' },
-  { round: '05', race: 'Italian Grand Prix', city: 'Monza', circuit: 'Autodromo Nazionale Monza' },
-  { round: '06', race: 'United States Grand Prix', city: 'Austin, Texas', circuit: 'Circuit of The Americas' },
-];
 
 const stories = [
   {
@@ -182,36 +167,63 @@ function RaceHero({ videoUrl }) {
   );
 }
 
-function RaceWeekend() {
+function formatRaceDate(date) {
+  const parts = new Intl.DateTimeFormat('en', { day: '2-digit', month: 'short', timeZone: 'UTC' })
+    .formatToParts(new Date(`${date}T12:00:00Z`));
+  const day = parts.find((part) => part.type === 'day')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  return `${day} ${month}`;
+}
+
+function getNextRace(races) {
+  const now = Date.now();
+  return races.find((race) => new Date(`${race.date}T${race.time ?? '00:00:00Z'}`).getTime() >= now);
+}
+
+function RaceWeekend({ seasonData, dataError }) {
+  const nextRace = seasonData ? getNextRace(seasonData.races) : null;
+  const weekendDates = nextRace
+    ? [...new Set(nextRace.sessionDates)].sort()
+    : [];
+  const firstDate = weekendDates[0] ?? nextRace?.date;
+  const lastDate = weekendDates.at(-1) ?? nextRace?.date;
+  const dateRange = firstDate && lastDate
+    ? firstDate.slice(0, 7) === lastDate.slice(0, 7)
+      ? `${firstDate.slice(8, 10)} — ${lastDate.slice(8, 10)} ${formatRaceDate(lastDate).split(' ')[1].toUpperCase()}`
+      : `${formatRaceDate(firstDate).toUpperCase()} — ${formatRaceDate(lastDate).toUpperCase()}`
+    : '';
+
   return (
     <section className="weekend section-wrap" id="weekend">
       <div className="section-heading">
         <div><p className="section-kicker">MARK YOUR CALENDAR</p><h2>Next up <span>on track</span></h2></div>
-        <Link className="text-link" to="/calander">Full 2026 calendar <span aria-hidden="true">↗</span></Link>
+        <Link className="text-link" to="/calander">Full {seasonData?.season ?? 'F1'} calendar <span aria-hidden="true">↗</span></Link>
       </div>
-      <div className="weekend__row">
-        <div className="weekend__round"><span>ROUND</span><strong>19</strong></div>
-        <div className="weekend__name"><p>UNITED STATES GRAND PRIX</p><h3>AUSTIN <span>/</span> TEXAS</h3><span className="weekend__venue">Circuit of The Americas · 5.513 km · 56 laps</span></div>
-        <div className="weekend__date"><span>RACE WEEKEND</span><strong>23 — 25 <small>OCT</small></strong><span className="weekend__year">2026 SEASON</span></div>
-        <Link className="weekend__arrow" to="/calander" aria-label="View race calendar">↗</Link>
-      </div>
+      {nextRace ? (
+        <div className="weekend__row">
+          <div className="weekend__round"><span>ROUND</span><strong>{String(nextRace.round).padStart(2, '0')}</strong></div>
+          <div className="weekend__name"><p>{nextRace.name.toUpperCase()}</p><h3>{nextRace.locality.toUpperCase()} <span>/</span> {nextRace.country.toUpperCase()}</h3><span className="weekend__venue">{nextRace.circuit}</span></div>
+          <div className="weekend__date"><span>RACE WEEKEND</span><strong>{dateRange}</strong><span className="weekend__year">{seasonData.season} SEASON</span></div>
+          <Link className="weekend__arrow" to="/calander" aria-label="View race calendar">↗</Link>
+        </div>
+      ) : (
+        <p className="data-message" role={dataError ? 'alert' : 'status'}>
+          {dataError ? `Could not load the next race: ${dataError}` : seasonData ? 'No upcoming races are listed for this season.' : 'Loading the live race calendar…'}
+        </p>
+      )}
     </section>
   );
 }
 
-function Standings({ fullPage = false }) {
+function Standings({ fullPage = false, seasonData, dataError }) {
   const [activeTab, setActiveTab] = useState('Drivers');
-  const shownRows = activeTab === 'Drivers' ? drivers : [
-    { pos: '01', name: 'McLaren', team: 'Constructor', points: '756', color: '#ff8000' },
-    { pos: '02', name: 'Ferrari', team: 'Constructor', points: '652', color: '#e8002d' },
-    { pos: '03', name: 'Red Bull Racing', team: 'Constructor', points: '589', color: '#3671c6' },
-    { pos: '04', name: 'Mercedes', team: 'Constructor', points: '468', color: '#27f4d2' },
-  ];
+  const standings = activeTab === 'Drivers' ? seasonData?.drivers : seasonData?.constructors;
+  const shownRows = fullPage ? standings : standings?.slice(0, 4);
 
   return (
     <section className={`standings section-wrap${fullPage ? ' standings--page' : ''}`} id="standings">
       <div className="section-heading">
-        <div><p className="section-kicker">{fullPage ? 'PLACEHOLDER · 2026 SEASON' : 'THE CHAMPIONSHIP'}</p><h2>{fullPage ? <>Championship <span>standings.</span></> : <>Made of <span>points.</span></>}</h2></div>
+        <div><p className="section-kicker">{seasonData ? `${seasonData.season} SEASON · ROUND ${seasonData.standingsRound}` : 'LIVE CHAMPIONSHIP'}</p><h2>{fullPage ? <>Championship <span>standings.</span></> : <>Made of <span>points.</span></>}</h2></div>
         <div className="tab-switch" role="tablist" aria-label="Championship standings">
           {['Drivers', 'Constructors'].map((tab) => (
             <button key={tab} type="button" role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? 'is-active' : ''} onClick={() => setActiveTab(tab)}>{tab}</button>
@@ -220,7 +232,7 @@ function Standings({ fullPage = false }) {
       </div>
       <div className="standings__table">
         <div className="standings__head"><span>POS</span><span>{activeTab === 'Drivers' ? 'DRIVER' : 'TEAM'}</span><span>POINTS</span></div>
-        {shownRows.map((row) => (
+        {shownRows?.map((row) => (
           <div className="standing-row" key={row.pos}>
             <span className="standing-row__pos">{row.pos}</span>
             <span className="standing-row__name"><i style={{ '--team-color': row.color }} />{row.name}<small>{row.team}</small></span>
@@ -228,31 +240,33 @@ function Standings({ fullPage = false }) {
           </div>
         ))}
       </div>
-      <p className="standings__note">Placeholder standings · Points and positions are sample data, not official results.</p>
+      {!shownRows?.length && <p className="data-message" role={dataError ? 'alert' : 'status'}>{dataError ? `Could not load live standings: ${dataError}` : 'Loading live standings…'}</p>}
+      <p className="standings__note">{seasonData ? `Official standings after round ${seasonData.standingsRound}.` : 'Standings are loading from the F1 data service.'}</p>
     </section>
   );
 }
 
-function CalendarPage() {
+function CalendarPage({ seasonData, dataError }) {
   return (
     <section className="calendar-page section-wrap">
       <div className="section-heading">
-        <div><p className="section-kicker">PLACEHOLDER · 2026 SEASON</p><h1>Race <span>calendar.</span></h1></div>
-        <span className="calendar-page__status">DATES TO BE CONFIRMED</span>
+        <div><p className="section-kicker">{seasonData ? `OFFICIAL ${seasonData.season} SEASON` : 'LIVE SEASON DATA'}</p><h1>Race <span>calendar.</span></h1></div>
+        <span className="calendar-page__status">{seasonData ? `${seasonData.races.length} RACES` : 'LOADING'}</span>
       </div>
-      <p className="calendar-page__note">A starter schedule layout. Round dates and event details are placeholders.</p>
-      <div className="calendar-table" role="table" aria-label="Placeholder race calendar">
+      {dataError && <p className="data-message" role="alert">Could not load the live race calendar: {dataError}</p>}
+      <div className="calendar-table" role="table" aria-label={`${seasonData?.season ?? 'F1'} race calendar`}>
         <div className="calendar-table__head" role="row"><span>ROUND</span><span>GRAND PRIX</span><span>LOCATION</span><span>CIRCUIT</span><span>DATE</span></div>
-        {calendarRaces.map((event) => (
-          <div className="calendar-table__row" role="row" key={event.round}>
-            <span className="calendar-table__round">{event.round}</span>
-            <strong>{event.race}</strong>
-            <span>{event.city}</span>
-            <span className="calendar-table__circuit">{event.circuit}</span>
-            <span className="calendar-table__date">TBC</span>
+        {seasonData?.races.map((race) => (
+          <div className="calendar-table__row" role="row" key={race.round}>
+            <span className="calendar-table__round">{String(race.round).padStart(2, '0')}</span>
+            <strong>{race.name}</strong>
+            <span>{race.locality}, {race.country}</span>
+            <span className="calendar-table__circuit">{race.circuit}</span>
+            <span className="calendar-table__date">{formatRaceDate(race.date)}</span>
           </div>
         ))}
       </div>
+      {!seasonData && !dataError && <p className="data-message" role="status">Loading the official race calendar…</p>}
     </section>
   );
 }
@@ -281,12 +295,12 @@ function Stories() {
   );
 }
 
-function HomePage({ intro, showIntro }) {
+function HomePage({ intro, showIntro, seasonData, dataError }) {
   return (
     <>
       {!showIntro && <RaceHero videoUrl={intro.videoUrl} />}
-      <RaceWeekend />
-      <Standings />
+      <RaceWeekend seasonData={seasonData} dataError={dataError} />
+      <Standings seasonData={seasonData} dataError={dataError} />
       <Stories />
     </>
   );
@@ -295,7 +309,23 @@ function HomePage({ intro, showIntro }) {
 function App() {
   const [intro, setIntro] = useState(initialIntro);
   const [showIntro, setShowIntro] = useState(true);
+  const [seasonData, setSeasonData] = useState(null);
+  const [dataError, setDataError] = useState('');
   const closeIntro = useCallback(() => setShowIntro(false), []);
+
+  useEffect(() => {
+    let isActive = true;
+    fetchSeasonData()
+      .then((data) => {
+        if (isActive) setSeasonData(data);
+      })
+      .catch((error) => {
+        if (isActive) setDataError(error.message);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -319,9 +349,9 @@ function App() {
       <Header />
       <main>
         <Routes>
-          <Route path="/" element={<HomePage intro={intro} showIntro={showIntro} />} />
-          <Route path="/standings" element={<Standings fullPage />} />
-          <Route path="/calander" element={<CalendarPage />} />
+          <Route path="/" element={<HomePage intro={intro} showIntro={showIntro} seasonData={seasonData} dataError={dataError} />} />
+          <Route path="/standings" element={<Standings fullPage seasonData={seasonData} dataError={dataError} />} />
+          <Route path="/calander" element={<CalendarPage seasonData={seasonData} dataError={dataError} />} />
           <Route path="*" element={<section className="section-wrap route-not-found"><p className="section-kicker">NOT ON THE GRID</p><h1>Page <span>not found.</span></h1><Link className="text-link" to="/">Back to home <span aria-hidden="true">↗</span></Link></section>} />
         </Routes>
       </main>
