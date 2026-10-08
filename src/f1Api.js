@@ -51,6 +51,14 @@ export async function fetchSeasonData() {
       circuit: race.Circuit.circuitName,
       locality: race.Circuit.Location.locality,
       country: race.Circuit.Location.country,
+      sessions: Object.entries(race)
+        .filter(([, session]) => session && typeof session === 'object' && typeof session.date === 'string')
+        .map(([name, session]) => ({
+          name: name.replace(/([a-z])([A-Z])/g, '$1 $2'),
+          date: session.date,
+          time: session.time,
+        }))
+        .sort((first, second) => `${first.date}T${first.time ?? ''}`.localeCompare(`${second.date}T${second.time ?? ''}`)),
       sessionDates: [
         race.date,
         ...Object.entries(race)

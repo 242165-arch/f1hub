@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useParams } from 'react-router-dom';
 import { fetchSeasonData } from './f1Api.js';
 
 const initialIntro = {
@@ -208,6 +208,33 @@ function formatRaceDate(date) {
   return `${day} ${month}`;
 }
 
+function slugify(value) {
+  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function getRaceSlug(race, season, races = []) {
+  if (String(season) === '2026' && /bahrain.*malaysia/i.test(race.name)) {
+    return 'bahrain-in-malaysia';
+  }
+  const hasDuplicateCountry = races.filter((entry) => entry.country === race.country).length > 1;
+  const locationSlug = hasDuplicateCountry ? `${slugify(race.locality)}-` : '';
+  return `${locationSlug}${slugify(race.country)}-gp`;
+}
+
+function getRacePath(race, season, races) {
+  return `/races/${season}/${getRaceSlug(race, season, races)}`;
+}
+
+function formatSessionTime(time) {
+  if (!time) return 'Time TBA';
+  return new Intl.DateTimeFormat('en', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  }).format(new Date(`2000-01-01T${time}`));
+}
+
 function getNextRace(races) {
   const now = Date.now();
   return races.find((race) => new Date(`${race.date}T${race.time ?? '00:00:00Z'}`).getTime() >= now);
@@ -233,12 +260,12 @@ function RaceWeekend({ seasonData, dataError }) {
         <Link className="text-link" to="/calander">Full {seasonData?.season ?? 'F1'} calendar <span aria-hidden="true">↗</span></Link>
       </div>
       {nextRace ? (
-        <div className="weekend__row">
+        <Link className="weekend__row" to={getRacePath(nextRace, seasonData.season, seasonData.races)}>
           <div className="weekend__round"><span>ROUND</span><strong>{String(nextRace.round).padStart(2, '0')}</strong></div>
           <div className="weekend__name"><p>{nextRace.name.toUpperCase()}</p><h3>{nextRace.locality.toUpperCase()} <span>/</span> {nextRace.country.toUpperCase()}</h3><span className="weekend__venue">{nextRace.circuit}</span></div>
           <div className="weekend__date"><span>RACE WEEKEND</span><strong>{dateRange}</strong><span className="weekend__year">{seasonData.season} SEASON</span></div>
-          <Link className="weekend__arrow" to="/calander" aria-label="View race calendar">↗</Link>
-        </div>
+          <span className="weekend__arrow" aria-hidden="true">↗</span>
+        </Link>
       ) : (
         <p className="data-message" role={dataError ? 'alert' : 'status'}>
           {dataError ? `Could not load the next race: ${dataError}` : seasonData ? 'No upcoming races are listed for this season.' : 'Loading the live race calendar…'}
@@ -287,19 +314,73 @@ function CalendarPage({ seasonData, dataError }) {
         <span className="calendar-page__status">{seasonData ? `${seasonData.races.length} RACES` : 'LOADING'}</span>
       </div>
       {dataError && <p className="data-message" role="alert">Could not load the live race calendar: {dataError}</p>}
-      <div className="calendar-table" role="table" aria-label={`${seasonData?.season ?? 'F1'} race calendar`}>
-        <div className="calendar-table__head" role="row"><span>ROUND</span><span>GRAND PRIX</span><span>LOCATION</span><span>CIRCUIT</span><span>DATE</span></div>
+      <div className="calendar-table" aria-label={`${seasonData?.season ?? 'F1'} race calendar`}>
+        <div className="calendar-table__head"><span>ROUND</span><span>GRAND PRIX</span><span>LOCATION</span><span>CIRCUIT</span><span>DATE</span></div>
         {seasonData?.races.map((race) => (
-          <div className="calendar-table__row" role="row" key={race.round}>
+          <Link className="calendar-table__row" key={race.round} to={getRacePath(race, seasonData.season, seasonData.races)} aria-label={`View ${race.name}`}>
             <span className="calendar-table__round">{String(race.round).padStart(2, '0')}</span>
             <strong>{race.name}</strong>
             <span>{race.locality}, {race.country}</span>
             <span className="calendar-table__circuit">{race.circuit}</span>
             <span className="calendar-table__date">{formatRaceDate(race.date)}</span>
-          </div>
+          </Link>
         ))}
       </div>
       {!seasonData && !dataError && <p className="data-message" role="status">Loading the official race calendar…</p>}
+    </section>
+  );
+}
+
+function RacePage({ seasonData, dataError }) {
+  const { season, slug } = useParams();
+  const race = seasonData && String(seasonData.season) === season
+    ? seasonData.races.find((entry) => getRaceSlug(entry, season, seasonData.races) === slug)
+    : null;
+
+  if (!seasonData && !dataError) {
+    return <section className="section-wrap race-detail"><p className="data-message" role="status">Loading race details…</p></section>;
+  }
+  if (dataError) {
+    return <section className="section-wrap race-detail"><p className="data-message" role="alert">Could not load race details: {dataError}</p></section>;
+  }
+  if (!race) {
+    return (
+      <section className="section-wrap route-not-found">
+        <p className="section-kicker">NOT ON THE GRID</p>
+        <h1>Race <span>not found.</span></h1>
+        <Link className="text-link" to="/calander">Back to calendar <span aria-hidden="true">↗</span></Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="race-detail section-wrap">
+      <Link className="text-link race-detail__back" to="/calander">← Race calendar</Link>
+      <p className="section-kicker">{season} SEASON · ROUND {String(race.round).padStart(2, '0')}</p>
+      <h1>{race.name}<span>.</span></h1>
+      <p className="race-detail__location">{race.locality}, {race.country}</p>
+      <div className="race-detail__facts">
+        <div><span>RACE DATE</span><strong>{formatRaceDate(race.date)} {season}</strong></div>
+        <div><span>CIRCUIT</span><strong>{race.circuit}</strong></div>
+        <div><span>LOCATION</span><strong>{race.locality}, {race.country}</strong></div>
+      </div>
+      <div className="race-detail__sessions">
+        <p className="section-kicker">WEEKEND SCHEDULE</p>
+        <h2>Session <span>times.</span></h2>
+        {race.sessions?.length ? (
+          <div className="race-detail__session-list">
+            {race.sessions.map((session) => (
+              <div className="race-detail__session" key={session.name}>
+                <strong>{session.name}</strong>
+                <span>{formatRaceDate(session.date)}</span>
+                <span>{formatSessionTime(session.time)}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="data-message">Session times have not been published yet.</p>
+        )}
+      </div>
     </section>
   );
 }
@@ -385,6 +466,7 @@ function App() {
           <Route path="/" element={<HomePage intro={intro} showIntro={showIntro} seasonData={seasonData} dataError={dataError} />} />
           <Route path="/standings" element={<Standings fullPage seasonData={seasonData} dataError={dataError} />} />
           <Route path="/calander" element={<CalendarPage seasonData={seasonData} dataError={dataError} />} />
+          <Route path="/races/:season/:slug" element={<RacePage seasonData={seasonData} dataError={dataError} />} />
           <Route path="*" element={<section className="section-wrap route-not-found"><p className="section-kicker">NOT ON THE GRID</p><h1>Page <span>not found.</span></h1><Link className="text-link" to="/">Back to home <span aria-hidden="true">↗</span></Link></section>} />
         </Routes>
       </main>
