@@ -3,7 +3,7 @@ import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { fetchSeasonData } from './f1Api.js';
 
 const initialIntro = {
-  videoUrl: 'https://www.youtube.com/watch?v=8AYy-BcjRXg',
+  videoUrl: 'https://www.youtube.com/watch?v=5HTA8zs2hSA',
   eyebrow: 'Lights out. Here we go.',
   title: 'THE RACE\nSTARTS HERE.',
   description: 'Your front row seat to everything Formula 1.',
@@ -61,52 +61,27 @@ function getYoutubeId(url) {
 }
 
 function Intro({ content, onSkip }) {
-  const playerHost = useRef(null);
   const videoId = getYoutubeId(content.videoUrl);
 
   useEffect(() => {
-    if (!videoId) return undefined;
-
-    let player;
-    let isActive = true;
-    loadYoutubeApi().then((youtube) => {
-      if (!isActive || !playerHost.current) return;
-      player = new youtube.Player(playerHost.current, {
-        width: '100%',
-        height: '100%',
-        videoId,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          disablekb: 1,
-          enablejsapi: 1,
-          fs: 0,
-          modestbranding: 1,
-          origin: window.location.origin,
-          playsinline: 1,
-          rel: 0,
-        },
-        events: {
-          onReady: (event) => {
-            event.target.mute();
-            event.target.playVideo();
-          },
-          onStateChange: (event) => {
-            if (event.data === youtube.PlayerState.ENDED) onSkip();
-          },
-        },
-      });
-    }).catch(() => {});
-
-    return () => {
-      isActive = false;
-      player?.destroy();
-    };
-  }, [videoId, onSkip]);
+    if (!videoId || !content.durationSeconds) return undefined;
+    const timeout = window.setTimeout(onSkip, content.durationSeconds * 1000);
+    return () => window.clearTimeout(timeout);
+  }, [videoId, content.durationSeconds, onSkip]);
 
   return (
     <section className="intro" aria-label="F1 intro">
-      {videoId && <div className="intro__video" ref={playerHost} aria-hidden="true" />}
+      {videoId && (
+        <iframe
+          className="intro__video"
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+          title="Muted Formula 1 intro video"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          referrerPolicy="origin"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
       <div className="intro__shade" />
       <button className="intro__continue" type="button" onClick={onSkip}>
         <span>CONTINUE</span>
@@ -138,21 +113,67 @@ function Header() {
 }
 
 function RaceHero({ videoUrl }) {
+  const playerHost = useRef(null);
+  const playerRef = useRef(null);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const videoId = getYoutubeId(videoUrl);
+
+  useEffect(() => {
+    if (!videoId) return undefined;
+
+    let player;
+    let isActive = true;
+    loadYoutubeApi().then((youtube) => {
+      if (!isActive || !playerHost.current) return;
+      player = new youtube.Player(playerHost.current, {
+        width: '100%',
+        height: '100%',
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          controls: 0,
+          enablejsapi: 1,
+          loop: 1,
+          modestbranding: 1,
+          mute: 1,
+          origin: window.location.origin,
+          playsinline: 1,
+          playlist: videoId,
+          rel: 0,
+        },
+        events: {
+          onReady: (event) => {
+            if (!isActive) return;
+            playerRef.current = event.target;
+            setIsPlayerReady(true);
+            event.target.mute();
+            event.target.playVideo();
+          },
+          onStateChange: (event) => {
+            if (isActive) setIsPlaying(event.data === youtube.PlayerState.PLAYING);
+          },
+          onAutoplayBlocked: () => {
+            if (isActive) setIsPlaying(false);
+          },
+        },
+      });
+    }).catch(() => {});
+
+    return () => {
+      isActive = false;
+      playerRef.current = null;
+      player?.destroy();
+    };
+  }, [videoId]);
 
   return (
     <section className="race-hero" id="top">
       <div className="race-hero__image" />
       {videoId && (
-        <iframe
-          className="race-hero__video"
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&modestbranding=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
-          title="Muted looping Formula 1 background video"
-          allow="autoplay; encrypted-media"
-          referrerPolicy="strict-origin-when-cross-origin"
-          aria-hidden="true"
-          tabIndex={-1}
-        />
+        <div className="race-hero__video" aria-hidden="true">
+          <div ref={playerHost} />
+        </div>
       )}
       <div className="race-hero__veil" />
       <div className="race-hero__copy">
@@ -162,6 +183,18 @@ function RaceHero({ videoUrl }) {
         <Link className="button button--light" to="/calander">Find your race weekend <span aria-hidden="true">↗</span></Link>
       </div>
       <div className="race-hero__caption"><span>01</span><span>BUILT FOR THE LOVE OF RACING</span></div>
+      {videoId && !isPlaying && (
+        <button
+          className="race-hero__play"
+          type="button"
+          disabled={!isPlayerReady}
+          onClick={() => playerRef.current?.playVideo()}
+          aria-label="Play background video"
+          title="Play background video"
+        >
+          <span aria-hidden="true">▶</span> PLAY VIDEO
+        </button>
+      )}
       <div className="race-hero__vertical">FORMULA ONE · FAN CULTURE · COMMUNITY</div>
     </section>
   );

@@ -46,6 +46,8 @@ button { cursor: pointer; }
 .race-hero__image, .race-hero__veil { position: absolute; inset: 0; }
 .race-hero__image { background: url('https://images.unsplash.com/photo-1532906619279-a4b7267faa66?auto=format&fit=crop&w=2200&q=90') center 54% / cover no-repeat; transform: scale(1.02); animation: hero-arrive 1.2s ease-out both; }
 .race-hero__video { position: absolute; z-index: 0; top: 50%; left: 50%; width: max(100vw, 177.78vh); height: max(100vh, 56.25vw); transform: translate(-50%, -50%); border: 0; pointer-events: none; }
+.race-hero__video > div, .race-hero__video iframe { width: 100%; height: 100%; }
+.race-hero__video iframe { display: block; border: 0; }
 .race-hero__veil { background: linear-gradient(90deg, rgba(12,14,15,.9) 0%, rgba(12,14,15,.71) 36%, rgba(12,14,15,.1) 78%), linear-gradient(0deg, rgba(8,9,10,.52), transparent 30%); }
 .race-hero__copy { position: absolute; z-index: 1; top: 50%; left: clamp(28px, 11vw, 170px); transform: translateY(-47%); max-width: 610px; animation: copy-arrive .8s .15s both; }
 .eyebrow, .section-kicker { margin: 0; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
@@ -60,6 +62,10 @@ button { cursor: pointer; }
 .button span { font-size: 17px; }
 .race-hero__caption { position: absolute; bottom: 27px; left: clamp(28px, 5.2vw, 84px); display: flex; align-items: center; gap: 15px; color: rgba(255,255,255,.6); font-size: 9px; font-weight: 700; letter-spacing: 1.3px; }
 .race-hero__caption span:first-child { color: white; font: 600 16px var(--display); }
+.race-hero__play { position: absolute; z-index: 2; right: 62px; bottom: 22px; display: inline-flex; align-items: center; gap: 9px; border: 1px solid rgba(255,255,255,.48); background: rgba(12,14,15,.55); color: white; padding: 10px 12px; font-size: 9px; font-weight: 700; transition: background 160ms ease, color 160ms ease; }
+.race-hero__play:hover:not(:disabled) { background: white; color: var(--ink); }
+.race-hero__play:disabled { cursor: wait; opacity: .55; }
+.race-hero__play:focus-visible { outline: 2px solid white; outline-offset: 3px; }
 .race-hero__vertical { position: absolute; right: 29px; top: 50%; writing-mode: vertical-rl; transform: translateY(-50%); color: rgba(255,255,255,.62); font-size: 8px; font-weight: 700; letter-spacing: 1.5px; }
 
 .section-wrap { max-width: 1180px; margin: 0 auto; padding: 88px 30px; }
@@ -140,6 +146,8 @@ button { cursor: pointer; }
 
 .intro { position: fixed; z-index: 10; inset: 0; display: flex; align-items: center; overflow: hidden; background: #101112; color: #fff; animation: intro-in 350ms ease both; }
 .intro__video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
+.intro__video > div, .intro__video iframe { width: 100%; height: 100%; }
+.intro__video iframe { display: block; border: 0; }
 .intro__shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(9,10,11,.88) 0%, rgba(9,10,11,.5) 52%, rgba(9,10,11,.2) 100%), linear-gradient(0deg, rgba(8,9,10,.5), transparent 48%); pointer-events: none; }
 .intro__continue { position: absolute; z-index: 1; top: 29px; right: 34px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,.38); background: rgba(13,14,15,.3); color: #fff; padding: 8px 10px 8px 14px; font-size: 9px; font-weight: 700; letter-spacing: 1px; transition: background 160ms ease; }
 .intro__continue:hover { background: var(--red); border-color: var(--red); }
